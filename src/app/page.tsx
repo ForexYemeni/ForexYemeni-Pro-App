@@ -115,12 +115,12 @@ export default function HomePage() {
             يرجى إضافة متغير <code className="rounded bg-trading-bg px-2 py-0.5 text-xs text-trading-gold">DATABASE_URL</code> في إعدادات المشروع على Vercel
           </p>
           <a
-            href="https://neon.tech"
+            href="https://supabase.com"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block rounded-lg bg-trading-gold px-6 py-2.5 text-sm font-bold text-trading-bg"
           >
-            إنشاء قاعدة مجانية من Neon
+            إنشاء قاعدة مجانية من Supabase
           </a>
         </div>
       </div>
