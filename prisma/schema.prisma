@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -35,11 +35,10 @@ model Signal {
   status        String   @default("ACTIVE")
   tpReached     Int      @default(0)
   alertText     String   @default("")
-  // حقول إضافية من المؤشر - لالتقاط الإشارة كاملة
-  alertStyle    String   @default("normal")     // normal / enhanced (عراقي)
-  tpMode        String   @default("ATR")        // ATR / RR / Fibonacci / Swings
+  alertStyle    String   @default("normal")
+  tpMode        String   @default("ATR")
   planName      String   @default("ForexYemeni_Gold")
-  contractSize  Float    @default(100)          // حجم العقد
+  contractSize  Float    @default(100)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   

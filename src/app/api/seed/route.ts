@@ -1,9 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function POST(request: NextRequest) {
+// تشغيل prisma db push تلقائياً عند أول طلب
+// هذا يضمن إنشاء الجداول في قاعدة البيانات
+async function setupDatabase() {
   try {
-    const body = await request.json();
+    const { execSync } = require('child_process');
+    execSync('npx prisma db push --skip-generate --accept-data-loss 2>&1', {
+      stdio: 'pipe',
+      timeout: 30000,
+    });
+    console.log('Database schema pushed successfully');
+  } catch (error) {
+    console.error('Database push failed (tables may already exist):', String(error).substring(0, 200));
+  }
+}
+
+export async function POST() {
+  try {
+    // محاولة تشغيل prisma db push
+    await setupDatabase();
 
     // Seed admin
     const existingAdmin = await db.admin.findUnique({
@@ -35,29 +51,15 @@ export async function POST(request: NextRequest) {
     // Seed sample signals
     const existingSignals = await db.signal.count();
     if (existingSignals === 0) {
-      // Signal 1: Active BUY XAUUSD
       const signal1 = await db.signal.create({
         data: {
-          type: 'BUY',
-          pair: 'XAUUSD',
-          timeframe: 'M15',
-          entryPrice: 2340.50,
-          stopLoss: 2335.20,
-          stopLossType: 'ATR',
-          riskPercent: 5.0,
-          riskAmount: 5.0,
-          lotSize: 0.10,
-          lotType: 'قياسي',
-          balance: 100,
-          stars: 2,
-          mtfTrend: 'BULLISH',
-          smcStructure: 'BULLISH',
-          status: 'ACTIVE',
-          tpReached: 0,
-          alertText: '',
+          type: 'BUY', pair: 'XAUUSD', timeframe: 'M15',
+          entryPrice: 2340.50, stopLoss: 2335.20, stopLossType: 'ATR',
+          riskPercent: 5.0, riskAmount: 5.0, lotSize: 0.10, lotType: 'قياسي',
+          balance: 100, stars: 2, mtfTrend: 'BULLISH', smcStructure: 'BULLISH',
+          status: 'ACTIVE', tpReached: 0, alertText: '',
         },
       });
-
       await db.signalTarget.createMany({
         data: [
           { signalId: signal1.id, order: 1, price: 2342.00, percentage: 25, status: 'PENDING' },
@@ -67,29 +69,15 @@ export async function POST(request: NextRequest) {
         ],
       });
 
-      // Signal 2: Completed SELL EURUSD
       const signal2 = await db.signal.create({
         data: {
-          type: 'SELL',
-          pair: 'EURUSD',
-          timeframe: 'H1',
-          entryPrice: 1.0850,
-          stopLoss: 1.0890,
-          stopLossType: 'Swing',
-          riskPercent: 3.0,
-          riskAmount: 3.0,
-          lotSize: 0.05,
-          lotType: 'ميكرو',
-          balance: 100,
-          stars: 3,
-          mtfTrend: 'BEARISH',
-          smcStructure: 'BEARISH',
-          status: 'TP_HIT',
-          tpReached: 3,
-          alertText: '',
+          type: 'SELL', pair: 'EURUSD', timeframe: 'H1',
+          entryPrice: 1.0850, stopLoss: 1.0890, stopLossType: 'Swing',
+          riskPercent: 3.0, riskAmount: 3.0, lotSize: 0.05, lotType: 'ميكرو',
+          balance: 100, stars: 3, mtfTrend: 'BEARISH', smcStructure: 'BEARISH',
+          status: 'TP_HIT', tpReached: 3, alertText: '',
         },
       });
-
       await db.signalTarget.createMany({
         data: [
           { signalId: signal2.id, order: 1, price: 1.0835, percentage: 30, status: 'HIT' },
@@ -98,29 +86,15 @@ export async function POST(request: NextRequest) {
         ],
       });
 
-      // Signal 3: SL hit GBPUSD
       const signal3 = await db.signal.create({
         data: {
-          type: 'BUY',
-          pair: 'GBPUSD',
-          timeframe: 'H4',
-          entryPrice: 1.2720,
-          stopLoss: 1.2680,
-          stopLossType: 'FVG',
-          riskPercent: 2.0,
-          riskAmount: 2.0,
-          lotSize: 0.03,
-          lotType: 'ميكرو',
-          balance: 100,
-          stars: 1,
-          mtfTrend: 'BULLISH',
-          smcStructure: 'BEARISH',
-          status: 'SL_HIT',
-          tpReached: 0,
-          alertText: '',
+          type: 'BUY', pair: 'GBPUSD', timeframe: 'H4',
+          entryPrice: 1.2720, stopLoss: 1.2680, stopLossType: 'FVG',
+          riskPercent: 2.0, riskAmount: 2.0, lotSize: 0.03, lotType: 'ميكرو',
+          balance: 100, stars: 1, mtfTrend: 'BULLISH', smcStructure: 'BEARISH',
+          status: 'SL_HIT', tpReached: 0, alertText: '',
         },
       });
-
       await db.signalTarget.createMany({
         data: [
           { signalId: signal3.id, order: 1, price: 1.2750, percentage: 33, status: 'PENDING' },
@@ -129,29 +103,15 @@ export async function POST(request: NextRequest) {
         ],
       });
 
-      // Signal 4: Partially hit
       const signal4 = await db.signal.create({
         data: {
-          type: 'SELL',
-          pair: 'USDJPY',
-          timeframe: 'M30',
-          entryPrice: 154.50,
-          stopLoss: 155.00,
-          stopLossType: 'ATR',
-          riskPercent: 4.0,
-          riskAmount: 4.0,
-          lotSize: 0.08,
-          lotType: 'قياسي',
-          balance: 100,
-          stars: 2,
-          mtfTrend: 'BEARISH',
-          smcStructure: 'BEARISH',
-          status: 'ACTIVE',
-          tpReached: 2,
-          alertText: '',
+          type: 'SELL', pair: 'USDJPY', timeframe: 'M30',
+          entryPrice: 154.50, stopLoss: 155.00, stopLossType: 'ATR',
+          riskPercent: 4.0, riskAmount: 4.0, lotSize: 0.08, lotType: 'قياسي',
+          balance: 100, stars: 2, mtfTrend: 'BEARISH', smcStructure: 'BEARISH',
+          status: 'ACTIVE', tpReached: 2, alertText: '',
         },
       });
-
       await db.signalTarget.createMany({
         data: [
           { signalId: signal4.id, order: 1, price: 154.20, percentage: 25, status: 'HIT' },
