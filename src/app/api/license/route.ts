@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 
 export async function GET() {
   try {
+    await ensureDatabase();
     const licenses = await db.licenseKey.findMany({
       orderBy: { createdAt: 'desc' },
     });
@@ -18,6 +19,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureDatabase();
     const { plan } = await request.json();
 
     if (!plan || !['BASIC', 'PRO', 'VIP'].includes(plan)) {

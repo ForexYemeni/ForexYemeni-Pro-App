@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 
 export async function GET() {
   try {
+    await ensureDatabase();
     const signals = await db.signal.findMany({
       where: {
         status: { in: ['TP_HIT', 'SL_HIT', 'CLOSED'] },

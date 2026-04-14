@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 🎯 Webhook Endpoint - يستقبل الإشارات من TradingView عبر Google Apps Script
@@ -163,6 +163,7 @@ function parseSLHit(message: string) {
 // ═══════════════════════════════════════════════════════════════════════════
 export async function POST(request: NextRequest) {
   try {
+    await ensureDatabase();
     let body = await request.text();
 
     // استخراج نص الرسالة (يعمل مع JSON و Raw Text و Form-encoded)

@@ -1,23 +1,11 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 
-// إنشاء الجداول تلقائياً باستخدام Raw SQL إذا لم تكن موجودة
-async function ensureTablesExist() {
-  const tables = ['Admin', '"Signal"', '"SignalTarget"', '"LicenseKey"', '"Statistic"'];
-  for (const table of tables) {
-    try {
-      await db.$executeRawUnsafe(`SELECT 1 FROM ${table} LIMIT 1`);
-    } catch {
-      // الجدول غير موجود - سيتم إنشاؤه لاحقاً عبر prisma migrate
-      console.log(`Table ${table} not found, needs migration`);
-    }
-  }
-}
-
+// إنشاء الجداول تلقائياً باستخدام ensureDatabase
 export async function POST() {
   try {
-    // التحقق من وجود الجداول
-    await ensureTablesExist();
+    // إنشاء الجداول تلقائياً
+    await ensureDatabase();
 
     // Seed admin
     try {

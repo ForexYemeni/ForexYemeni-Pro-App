@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 
 export async function GET() {
   try {
+    await ensureDatabase();
     const signals = await db.signal.findMany({
       include: {
         targets: {
@@ -23,6 +24,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureDatabase();
     const body = await request.json();
     const {
       type,

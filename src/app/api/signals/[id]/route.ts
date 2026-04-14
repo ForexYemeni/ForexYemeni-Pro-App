@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, ensureDatabase } from '@/lib/db';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabase();
     const { id } = await params;
     const body = await request.json();
 
@@ -33,6 +34,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDatabase();
     const { id } = await params;
     await db.signal.delete({ where: { id } });
 
