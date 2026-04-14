@@ -14,37 +14,20 @@ export default function HomePage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [stats, setStats] = useState<Stats>({
-    totalTrades: 0,
-    closedTrades: 0,
-    winTrades: 0,
-    lossTrades: 0,
-    winRate: 0,
-    activeSignals: 0,
+    totalTrades: 0, closedTrades: 0, winTrades: 0,
+    lossTrades: 0, winRate: 0, activeSignals: 0,
   });
   const [isLoadingSignals, setIsLoadingSignals] = useState(true);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [isSeeding, setIsSeeding] = useState(true);
-
-  // Seed data on first load
-  useEffect(() => {
-    const seedData = async () => {
-      try {
-        await fetch('/api/seed', { method: 'POST' });
-      } catch {
-        // Seed might fail if data exists, that's ok
-      } finally {
-        setIsSeeding(false);
-      }
-    };
-    seedData();
-  }, []);
+  const [isSetup, setIsSetup] = useState(true);
+  const [setupError, setSetupError] = useState('');
 
   const fetchSignals = useCallback(async () => {
     setIsLoadingSignals(true);
     try {
       const res = await fetch('/api/signals');
       const data = await res.json();
-      setSignals(data);
+      if (data && Array.isArray(data)) setSignals(data);
     } catch {
       console.error('Failed to fetch signals');
     } finally {
@@ -57,7 +40,7 @@ export default function HomePage() {
     try {
       const res = await fetch('/api/stats');
       const data = await res.json();
-      setStats(data);
+      if (data && typeof data === 'object') setStats(data);
     } catch {
       console.error('Failed to fetch stats');
     } finally {
@@ -66,22 +49,38 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!isSeeding) {
+    const setup = async () => {
+      try {
+        const res = await fetch('/api/seed', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok && data?.details?.includes('DATABASE_URL')) {
+          setSetupError('DATABASE_URL');
+        }
+      } catch {
+        // Seed might fail, continue anyway
+      } finally {
+        setIsSetup(false);
+      }
+    };
+    setup();
+  }, []);
+
+  useEffect(() => {
+    if (!isSetup) {
       fetchSignals();
       fetchStats();
     }
-  }, [isSeeding, fetchSignals, fetchStats]);
+  }, [isSetup, fetchSignals, fetchStats]);
 
-  // Auto-refresh signals every 30 seconds
   useEffect(() => {
-    if (currentView === 'user' && !isSeeding) {
+    if (currentView === 'user' && !isSetup) {
       const interval = setInterval(() => {
         fetchSignals();
         fetchStats();
       }, 30000);
       return () => clearInterval(interval);
     }
-  }, [currentView, isSeeding, fetchSignals, fetchStats]);
+  }, [currentView, isSetup, fetchSignals, fetchStats]);
 
   const handleLogin = (admin: AdminUser) => {
     setAdminUser(admin);
@@ -95,12 +94,34 @@ export default function HomePage() {
     setCurrentView('user');
   };
 
-  if (isSeeding) {
+  if (isSetup) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#0a0e17' }}>
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-3 border-trading-border border-t-trading-gold" />
           <p className="text-sm text-trading-text-secondary">جاري تحميل المنصة...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (setupError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#0a0e17' }}>
+        <div className="max-w-md rounded-2xl border border-trading-border bg-trading-card p-8 text-center">
+          <div className="mb-4 text-4xl">⚙️</div>
+          <h2 className="mb-2 text-xl font-bold text-trading-text">إعداد قاعدة البيانات</h2>
+          <p className="mb-4 text-sm text-trading-text-secondary">
+            يرجى إضافة متغير <code className="rounded bg-trading-bg px-2 py-0.5 text-xs text-trading-gold">DATABASE_URL</code> في إعدادات المشروع على Vercel
+          </p>
+          <a
+            href="https://neon.tech"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block rounded-lg bg-trading-gold px-6 py-2.5 text-sm font-bold text-trading-bg"
+          >
+            إنشاء قاعدة مجانية من Neon
+          </a>
         </div>
       </div>
     );
@@ -118,7 +139,6 @@ export default function HomePage() {
       <main className="mx-auto max-w-4xl px-4 py-4 sm:px-6 sm:py-6">
         {currentView === 'user' && (
           <div className="space-y-6">
-            {/* Hero Banner */}
             <div className="relative overflow-hidden rounded-2xl border border-trading-gold/20 bg-gradient-to-l from-trading-gold/10 via-trading-card to-trading-card p-5 sm:p-6">
               <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-trading-gold/5 blur-3xl" />
               <div className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-trading-gold/5 blur-3xl" />
@@ -140,10 +160,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Stats Bar */}
             <StatsBar stats={stats} isLoading={isLoadingStats} />
 
-            {/* Signal List */}
             <SignalList
               signals={signals}
               isLoading={isLoadingSignals}
@@ -156,10 +174,7 @@ export default function HomePage() {
         )}
 
         {currentView === 'admin-login' && (
-          <AdminLogin
-            onLogin={handleLogin}
-            onBack={() => setCurrentView('user')}
-          />
+          <AdminLogin onLogin={handleLogin} onBack={() => setCurrentView('user')} />
         )}
 
         {currentView === 'admin-dashboard' && (
@@ -167,7 +182,6 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="mt-auto border-t border-trading-border py-4 text-center">
         <p className="text-xs text-trading-text-secondary">
           © {new Date().getFullYear()} ForexYemeni Pro - جميع الحقوق محفوظة
